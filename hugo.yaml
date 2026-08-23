@@ -1,0 +1,47 @@
+baseURL: https://blog.dmhosted.com/
+locale: en-us
+title: DMHosted Blog
+theme: "PaperMod"
+
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+
+pagination:
+  pagerSize: 10
+
+minify:
+  disableXML: true
+
+params:
+  env: production
+  description: "One line. Used for social previews and search results."
+  ShowReadingTime: true
+  ShowCodeCopyButtons: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: false
+
+  homeInfoParams:
+    Title: "Davide Macario's Blog"
+    Content: "Some things I write when I have the time"
+
+  socialIcons:
+    - name: github
+      url: "https://github.com/davmacario"
+    - name: rss
+      url: "/index.xml"
+
+menu:
+  main:
+    - { identifier: posts, name: Posts, url: /posts/, weight: 10 }
+    - { identifier: tags,  name: Tags,  url: /tags/,  weight: 20 }
+    - { identifier: about, name: About, url: /about/, weight: 30 }
+
+markup:
+  highlight:
+    noClasses: false
+    codeFences: true
+    guessSyntax: true
+  goldmark:
+    renderer:
+      unsafe: true
