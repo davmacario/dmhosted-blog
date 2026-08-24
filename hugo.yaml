@@ -1,6 +1,6 @@
 baseURL: https://blog.dmhosted.com/
 locale: en-us
-title: DMHosted Blog
+title: Davide Macario's Blog
 theme: "PaperMod"
 
 enableRobotsTXT: true
@@ -15,7 +15,7 @@ minify:
 
 params:
   env: production
-  description: "One line. Used for social previews and search results."
+  description: "I write about computers"
   ShowReadingTime: true
   ShowCodeCopyButtons: true
   ShowPostNavLinks: true
@@ -23,7 +23,7 @@ params:
 
   homeInfoParams:
     Title: "Davide Macario's Blog"
-    Content: "I tend to write about things I do"
+    Content: "These are just some of the cool things I play with"
 
   socialIcons:
     - name: github

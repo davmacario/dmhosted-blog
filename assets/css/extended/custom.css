@@ -1,0 +1,23 @@
+/* Wider than default — technical posts have code blocks */
+.main { max-width: 780px; }
+
+
+.alert {
+  border-left: 4px solid var(--alert-color, var(--border));
+  background: color-mix(in srgb, var(--alert-color, var(--border)) 8%, transparent);
+  padding: 0.8rem 1rem;
+  margin: 1.5rem 0;
+  border-radius: 0 4px 4px 0;
+  font-style: normal;
+}
+.alert > p:last-child { margin-bottom: 0; }
+.alert-title {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--alert-color);
+}
+.alert-note      { --alert-color: #3b82f6; }
+.alert-tip       { --alert-color: #10b981; }
+.alert-important { --alert-color: #8b5cf6; }
+.alert-warning   { --alert-color: #f59e0b; }
+.alert-caution   { --alert-color: #ef4444; }
