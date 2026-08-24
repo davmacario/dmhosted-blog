@@ -1,6 +1,6 @@
 ---
 date: "2026-08-24T18:49:44+02:00"
-draft: true
+draft: false
 title: Tailscale and Kubernetes
 summary: "Exposing Kubernetes workloads via Tailscale"
 tags:
@@ -287,7 +287,7 @@ spec:
 As stated before, this setup allows customizing domain names of Kubernetes worloads exposed within Tailscale.
 
 Being essentially a different Traefik installation than the "main" one (which can be used to expose services publicly), this allows to provide a secure method to access resources that should remain "internal".
-In my case, for example, even though my cluster runs some public services, I keep things such as internal dashboards (Longhorn, Traefik) internal to my VPN.
+In my case, for example, even though my cluster runs some public services, this method allows me to keep things such as internal dashboards (Longhorn, Traefik) internal to my VPN.
 
 ---
 
