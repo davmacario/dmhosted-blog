@@ -1,0 +1,49 @@
+name: PR Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "latest"
+          extended: true
+
+      - name: Build (fails on broken templates/shortcodes)
+        run: hugo --minify --gc
+
+      - name: Check for broken links
+        run: |
+          curl -sSLo /tmp/ht.tar.gz \
+            https://github.com/wjdp/htmltest/releases/download/v0.17.0/htmltest_0.17.0_linux_amd64.tar.gz
+          tar -xzf /tmp/ht.tar.gz -C /tmp
+          /tmp/htmltest -c .htmltest.yml public/
+
+      - name: Validate Caddyfile
+        run: |
+          docker run --rm -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+
+      - name: Verify image builds
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview-${{ github.event.pull_request.number }}
+          path: public/
+          retention-days: 3

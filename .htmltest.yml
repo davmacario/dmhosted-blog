@@ -1,0 +1,8 @@
+DirectoryPath: "public"
+CheckExternal: true
+CheckInternal: true
+IgnoreDirectoryMissingTrailingSlash: true
+CacheExpires: "168h"
+IgnoreURLs:
+  - "^https://twitter.com"
+  - "^https://x.com"
