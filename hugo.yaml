@@ -31,6 +31,9 @@ params:
     - name: linkedin
       url: "https://www.linkedin.com/in/davide-macario-b872b4225"
 
+  footer:
+    text: 'Content <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · Code <a href="https://github.com/davmacario/blog/blob/main/LICENSE">MIT</a>'
+
 menu:
   main:
     - identifier: posts
