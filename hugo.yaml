@@ -23,19 +23,28 @@ params:
 
   homeInfoParams:
     Title: "Davide Macario's Blog"
-    Content: "Some things I write when I have the time"
+    Content: "I tend to write about things I do"
 
   socialIcons:
     - name: github
       url: "https://github.com/davmacario"
-    - name: rss
-      url: "/index.xml"
+    - name: linkedin
+      url: "https://www.linkedin.com/in/davide-macario-b872b4225"
 
 menu:
   main:
-    - { identifier: posts, name: Posts, url: /posts/, weight: 10 }
-    - { identifier: tags,  name: Tags,  url: /tags/,  weight: 20 }
-    - { identifier: about, name: About, url: /about/, weight: 30 }
+    - identifier: posts
+      name: Posts
+      url: /posts/
+      weight: 10
+    - identifier: tags
+      name: Tags
+      url: /tags/
+      weight: 20
+    - identifier: about
+      name: About
+      url: /about/about-me
+      weight: 30
 
 markup:
   highlight:
