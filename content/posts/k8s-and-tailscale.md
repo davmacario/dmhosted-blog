@@ -2,7 +2,7 @@
 date: "2026-08-24T18:49:44+02:00"
 draft: false
 title: Tailscale and Kubernetes
-summary: "Exposing Kubernetes workloads via Tailscale"
+summary: "Exposing Kubernetes workloads via Tailscale, using custom domain names and valid TLS certs"
 tags:
   - kubernetes
   - tailscale

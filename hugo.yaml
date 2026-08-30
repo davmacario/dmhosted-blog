@@ -14,8 +14,12 @@ minify:
   disableXML: true
 
 params:
+  contact:
+    email: dav.macario@gmail.com
   env: production
-  description: "I write about computers"
+  description: "Software & Engineering & Software Engineering"
+  mainSections:
+    - posts
   ShowReadingTime: true
   ShowCodeCopyButtons: true
   ShowPostNavLinks: true
@@ -23,7 +27,11 @@ params:
 
   homeInfoParams:
     Title: "Davide Macario's Blog"
-    Content: "These are just some of the cool things I play with"
+    Content: |-
+      Platform/DevOps engineer, originally from Torino, now living in the Netherlands.
+      I write about Linux, Kubernetes, homelabs and distributed systems: mostly the
+      things I break in my spare time.\
+      [More about me →](/about/about-me/)
 
   socialIcons:
     - name: github

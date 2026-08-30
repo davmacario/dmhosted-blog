@@ -4,7 +4,7 @@ draft: false
 title: 'About Me'
 ---
 
-> _Just a sleep-deprived Platform/DevOps engineer trying to learn something in the age of AI_
+> _Just a sleep-deprived Platform/DevOps engineer trying to learn something in the age of AI_.
 
 Originally from Italy (Torino), I moved to Chicago for studying, and I am now living in the Netherlands.
 
@@ -15,6 +15,8 @@ My areas of interest are Linux, cloud computing, distributed and scalable system
 I am in the process of learning Kubernetes, and I like writing bad code to run on crappy computers.
 
 When I'm not at work, I'm usually running random stuff in my homelab, ~~winning[^2]~~ participating in hackathons, writing Neovim plugins, or playing the electric bass.
+
+If you want to learn more, here is my [resume](/resume.pdf).
 
 [^1]: ["A Model-Distributed Inference Approach for Large Language Models at the Edge"](https://arxiv.org/abs/2505.18164)
 [^2]: [FREISA](https://github.com/B-AROL-O/FREISA) - Four-Legged Robot Ensuring Intelligent Sprinkler Automation
