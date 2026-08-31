@@ -73,7 +73,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
         run: |
           set -o pipefail
-          npx semantic-release --dry-run --no-ci --branches "$HEAD_REF" 2>&1 \
+          npm run release:dry -- --branches "$HEAD_REF" 2>&1 \
             | tee /tmp/semantic-release.log
 
       - name: Report next version
