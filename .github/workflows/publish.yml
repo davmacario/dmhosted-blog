@@ -7,15 +7,61 @@ on:
 
 concurrency:
   group: publish
-  cancel-in-progress: true
+  cancel-in-progress: false # Avoid canceling release mid-pipeline
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed for gh releases
+      issues: write # semantic-release success comments
+      pull-requests: write # semantic-release success comments
+    outputs:
+      published: ${{ steps.out.outputs.published }}
+      version: ${{ steps.out.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      # semantic-release writes .release-version via @semantic-release/exec
+      # (verifyReleaseCmd), and only when a release is actually warranted.
+      - name: Display released version
+        id: out
+        run: |
+          if [ -f .release-version ]; then
+            version="$(cat .release-version)"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "### Released v$version" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "### No release: no features/bugfixes/breaking changes since last" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  publish:
+    # Always update
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,15 +90,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Derive tags
+      # Only use semver tags if a release happened
+      - name: Derive Docker tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/dmhosted-blog
           tags: |
             type=sha,format=long,prefix=
             type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
             type=raw,value=latest
+            type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }},enable=${{ needs.release.outputs.published == 'true' }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }},enable=${{ needs.release.outputs.published == 'true' }}
+            type=semver,pattern={{major}},value=v${{ needs.release.outputs.version }},enable=${{ needs.release.outputs.published == 'true' }}
 
       - uses: docker/build-push-action@v6
         with:
