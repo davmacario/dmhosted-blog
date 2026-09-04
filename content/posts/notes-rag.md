@@ -1,7 +1,7 @@
 ---
 date: "2026-08-31T23:56:52+02:00"
 draft: false
-title: "Notes Rag"
+title: "Notes RAG"
 summary: "Building a RAG for my personal notes (and running it on K8s)"
 tags:
   - kubernetes
@@ -12,36 +12,36 @@ tags:
 ---
 
 Countless words could be spent to explain the superiority of text-based file formats, but I won't bore you with this.
-It comes a moment in every digital notetaker's life when searching for specific information in your notes (or _second brain_, as [Obsidian](https://obsidian.md/) nerds like to call it) becomes more and more difficult.
+There comes a moment in every digital notetaker's life when searching for specific information in your notes (or _second brain_, as [Obsidian](https://obsidian.md/) nerds like to call it) becomes more and more difficult.
 
 {{< figure
   src="/obsidian-graph.png"
   alt="Obsidian graph view of my notes"
-  caption="Obsidian graph view from my notes"
+  caption="Obsidian graph view of (part of) my notes"
   align="center"
 >}}
 
-Additionally, in the age of AI, I encounter more and more the need to be able to easily inject context into conversations based on my knowledge contained in my notes.
+Additionally, when using AI, I often feel the need to be able to easily inject context into conversations based on my knowledge contained in my notes.
 
-Well, it turns out that it is possible to catch two birds with one stone in this case!
-And this is all thanks to **Retrieval Augmented Generation** (RAG).
-This is by far not a new technique, but it is one that is often underestimated, as its benefits struggle to hold up with the increasing performance of LLMs.
+Well, it turns out that it is possible to kill two birds with one stone in this case!
+And this is all thanks to **Retrieval Augmented Generation** (RAG).\
+RAG is by no means a new technique, but it is one that is becoming underestimated, as its benefits struggle to hold up with the increasing performance of LLMs.
 
-In this article, I'm going to explain why I think RAG still holds up in the _agentic AI era_ of 2026, and how I run one so that I don't have to get lost in my own mess of a "_second brain_".
+In this article, I'm going to explain why I think RAG still holds up in the "_agentic AI era_" (for my specific use case), and how I run one so that I don't have to get lost in my own mess of a "_second brain_".
 
 > [!warning] Disclaimer
 >
 > There are probably countless, better performing implementations of RAG systems out there.
-> I like mine because _I built it_ :)
+> I like mine because _I built it_ and it runs on my own hardware :)
 
 ## Retrieval Augmented Generation in short
 
-RAG is a technique created to automatically inject relevant context into a LLM by querying relevant information of a set of documents using _information retrieval_ techniques.
-These technique work by computing a measure of semantical similarity between the user query and a set of text (or other form of media) samples.
+RAG is a technique created to automatically inject relevant context into an LLM by querying relevant information of a set of documents using _information retrieval_ techniques.
+These techniques work by computing a measure of semantic similarity between the user query and a set of text (or other form of media) samples.
 
 The typical method used to perform information retrieval in this context is through vector similarity.
-This approach employs vector embeddings obtained by feeding both the samples and the query through the same _text embedding model_ (same type used as input step of an LLM), which is typically a neural network or matrix transformation trained to capture semantical meaning of input text samples onto a latent representation space (the vector space).
-Given this, finding text samples close in meaning means finding vectors that are close in space (i.e., which have a high dot product).
+This approach employs vector embeddings obtained by feeding both the samples and the query through the same _text embedding model_, which is typically a neural network or matrix transformation trained to capture semantic meaning of input text samples onto a latent representation space (the vector space).
+Given this, finding text samples close in meaning means finding vectors that are close in space (which have, e.g., high _cosine similarity_).
 
 ### RAG in practice
 
@@ -72,14 +72,16 @@ The main drawback of a "traditional" RAG implementation is that documents are re
 In most applications of RAG, this is fine, as the reference knowledge base is generally used to "ground" the LLM response.
 In my case, though, I would like to "pull in" extra information into a conversation only if needed.
 
-Additionally, for large user queries, the retrieval
+Additionally, retrieval performance (in terms of relevance of the results) is negatively affected by long user queries, especially on reference data that contains sparse bits of information, like personal notes.
+Ideally, the queried string is something resembling a Google search (few words, mostly keywords).\
+This is actually not usually a problem in most RAG systems, as retrieval performance is very good on state-of-the-art embedding models, but for my use case I would like for retrieval to be very lightweigh and run on CPU only, so that I could easily containerize it and run it on my homelab (currently no GPUs there).
 
-This ties into what the main limitation of "textbook" RAG systems is: RAG needs to be implemented in the LLM harness/frontend, as it needs to happen within the conversation itself.
+The main limitation of "textbook" RAG systems, however, is that they need to be implemented in the LLM harness/frontend, as RAGs need to be always queried during conversations.
 This means that implementing it would require a custom chat interface which performs document retrieval under the hood.
-This is not an option, as I don't want to lock myself into a specific implementation of a LLM chat application.
+This is not an option, as I don't want to lock myself into a specific implementation of an LLM chat application.
 
-Both of these limitations can be solved by wrapping the RAG retrieval step in a LLM tool, which can then be exposed to the LLM "frontend" using the Model Context Protocol (MCP)[^2].
-The LLM can then autonomously decide whether to invoke a tool
+Both of these limitations can be solved by wrapping the RAG retrieval step in an LLM tool, which can then be exposed to the LLM "frontend" using the Model Context Protocol (MCP)[^2].
+The LLM can then autonomously decide whether to invoke a tool based on the conversation.
 
 [^2]: [MCP](https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro) is a standard used to extend LLM capabilities by means of tools, exposed through a well-defined interface.
 
@@ -94,15 +96,20 @@ The LLM can then autonomously decide whether to invoke a tool
 - [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
 - Extras include GitPython (Git repo management), Pydantic (data validation)
 
-The code can be found [here](https://github.com/davmacario/notes-rag/).
+The code can be found [here](https://github.com/davmacario/notes-rag/) - _feel free to contribute!_.
 
 #### Architecture
 
-<!--TODO: include c4 diagrams (container is most interesting)-->
+{{< figure
+  src="/notes-rag-c2-container.svg"
+  alt="Container diagram - notes-rag"
+  caption="Container Diagram (from C4 model) of the application"
+  align="center"
+>}}
 
 #### How it works
 
-The RAG runs as an MCP server, which exposes it as a tool over (streamable-)HTTP.
+The RAG runs as an **MCP server**, which exposes it as a tool over (streamable-)HTTP.
 This allows any LLM harness supporting MCP to connect to it and be advertised the tool (I personally use Claude Code and [OpenCode](https://opencode.ai/)).
 
 The tool itself is used to fetch relevant documents given a _query string_ and the _number of desired documents_.
@@ -110,12 +117,55 @@ Note that "documents", in this context, refers to _Markdown sections_.
 This means that each vector in the DB is associated with one _section_ / _chapter_ of a file in my notes.
 This is also a good way to avoid trying to encode too large pieces of text in one single vector, which, as a rule of thumb, decreases retrieval performance.
 
-This setup delegates to the LLM the choice on whether the conversation actually requires fetching relevant knowledge from the notes, so information is not always retrieved, resulting in better context window usage.
-Latest LLMs at the time of writing are also optimized and trained to specifically use tools, which means that they generally have good common sense when it comes to choosing if or which tool to invoke.
+> [!TIP]
+>
+> Decrease in retrieval performance with longer queries happens because embedding the whole query with a single vector inevitably "averages out" nuances.
 
-## Why not an LLM knowledge bases?
+The documents come from my own notes, which are stored on a hosted Git platform, and get fetched on a schedule.
+Whenever a change is found, the vector DB is rebuilt, and hot-swapped.
+
+This setup delegates to the LLM the choice on whether the conversation actually requires fetching relevant knowledge from the notes, so information is not always retrieved, resulting in better context window usage.
+Latest LLMs at the time of writing are also optimized and trained to specifically use tools, which means that they generally have good _common sense_ when it comes to choosing if or which tool to invoke.
+
+#### Usage in practice
+
+The application itself is [containerized](https://github.com/davmacario/notes-rag/pkgs/container/notes-rag), and it can run on virtually any host, as it is built with the intention of taking as small of a footprint as possible.
+In my case, it [runs on Kubernetes](https://github.com/davmacario/dmhosted-infra/tree/main/kubernetes/apps/notes-rag), and it is exposed to my VPN (Tailscale) only, over HTTPS[^3].
+
+> [!NOTE]
+>
+> The MCP server runs on my own infra, while the LLM can, in principle, be whatever (as long as the harness used supports MCP).
+
+To add this MCP server to Claude Code, I can just run:
+
+```bash
+claude mcp add --transport http notes-rag https://notes-rag.internal.dmhosted.com/mcp
+```
+
+Claude will then have access to the tool, including a description of it and the parameters each call requires.
+
+{{< figure
+  src="/notes-rag-mcp-1.png"
+  alt="Notes-RAG MCP in Claude (1)"
+  caption="Notes-RAG MCP in Claude Code"
+  align="center"
+>}}
+
+{{< figure
+  src="/notes-rag-mcp-2.png"
+  alt="Notes-RAG MCP in Claude (2)"
+  caption="Notes-RAG MCP in Claude Code - Tool"
+  align="center"
+>}}
+
+[^3]: See [this other article](/posts/k8s-and-tailscale) for an explanation how.
+
+## Why not an LLM knowledge base?
 
 The topic of this article might seem related to the concept of [LLM Knowledge Bases](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), but there are quite a few reasons why this does not (personally) fit.
+
+As defined by A. Karpathy, an **LLM Knowledge Base** is essentially a note taking / information system where the user dumps information to an LLM, who is then tasked to categorize, rewrite, and store it in a structured way.
+The outcome of this is a wiki, where the LLM acts as the main way to both add and retrieve information.
 
 First of all, I enjoy writing.
 I want all my notes to be written by me; that is how I make sure that the information in them is what I actually know/think.
@@ -125,3 +175,13 @@ Having a RAG system is just a "nice to have" in making it easier for LLMs to be 
 On the other hand, this system also allows me to easily look information up, as the MCP server also returns the names of the files the relevant information was obtained from.
 
 Third, I don't want to be dependent on a single specific LLM, or on LLM performance in general, especially with pricing changing on the regular and user experience being generally variable between models.
+
+## Conclusions
+
+---
+
+## Links and Credits
+
+- [Code](https://github.com/davmacario/notes-rag/)
+- [Infra (Kubernetes)](https://github.com/davmacario/dmhosted-infra/tree/main/kubernetes/apps/notes-rag)
+- [LLM Knowledge Bases](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
