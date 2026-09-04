@@ -74,13 +74,17 @@ In my case, though, I would like to "pull in" extra information into a conversat
 
 Additionally, retrieval performance (in terms of relevance of the results) is negatively affected by long user queries, especially on reference data that contains sparse bits of information, like personal notes.
 Ideally, the queried string is something resembling a Google search (few words, mostly keywords).\
-This is actually not usually a problem in most RAG systems, as retrieval performance is very good on state-of-the-art embedding models, but for my use case I would like for retrieval to be very lightweigh and run on CPU only, so that I could easily containerize it and run it on my homelab (currently no GPUs there).
+This is actually not usually a problem in most RAG systems, as retrieval performance is very good on state-of-the-art embedding models, but for my use case I would like for retrieval to be very lightweight and run on CPU only, so that I could easily containerize it and run it on my homelab (currently no GPUs there).
+
+> [!TIP]
+>
+> Decrease in retrieval performance with longer queries happens because embedding the whole query with a single vector inevitably "averages out" nuances.
 
 The main limitation of "textbook" RAG systems, however, is that they need to be implemented in the LLM harness/frontend, as RAGs need to be always queried during conversations.
 This means that implementing it would require a custom chat interface which performs document retrieval under the hood.
 This is not an option, as I don't want to lock myself into a specific implementation of an LLM chat application.
 
-Both of these limitations can be solved by wrapping the RAG retrieval step in an LLM tool, which can then be exposed to the LLM "frontend" using the Model Context Protocol (MCP)[^2].
+All these limitations can be solved by wrapping the RAG retrieval step in an LLM tool, which can then be exposed to the LLM "frontend" using the Model Context Protocol (MCP)[^2].
 The LLM can then autonomously decide whether to invoke a tool based on the conversation.
 
 [^2]: [MCP](https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro) is a standard used to extend LLM capabilities by means of tools, exposed through a well-defined interface.
@@ -117,15 +121,13 @@ Note that "documents", in this context, refers to _Markdown sections_.
 This means that each vector in the DB is associated with one _section_ / _chapter_ of a file in my notes.
 This is also a good way to avoid trying to encode too large pieces of text in one single vector, which, as a rule of thumb, decreases retrieval performance.
 
-> [!TIP]
->
-> Decrease in retrieval performance with longer queries happens because embedding the whole query with a single vector inevitably "averages out" nuances.
-
 The documents come from my own notes, which are stored on a hosted Git platform, and get fetched on a schedule.
 Whenever a change is found, the vector DB is rebuilt, and hot-swapped.
 
 This setup delegates to the LLM the choice on whether the conversation actually requires fetching relevant knowledge from the notes, so information is not always retrieved, resulting in better context window usage.
 Latest LLMs at the time of writing are also optimized and trained to specifically use tools, which means that they generally have good _common sense_ when it comes to choosing if or which tool to invoke.
+
+Also, being _free_ to use tools, the LLM can choose to perform multiple calls to the MCP server, for example if needing to look up information from different topics.
 
 #### Usage in practice
 
@@ -164,7 +166,7 @@ Claude will then have access to the tool, including a description of it and the 
 
 The topic of this article might seem related to the concept of [LLM Knowledge Bases](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), but there are quite a few reasons why this does not (personally) fit.
 
-As defined by A. Karpathy, an **LLM Knowledge Base** is essentially a note taking / information system where the user dumps information to an LLM, who is then tasked to categorize, rewrite, and store it in a structured way.
+As defined by Andrej Karpathy, an **LLM Knowledge Base** is essentially a note taking / information system where the user dumps information to an LLM, which is then tasked to categorize, rewrite, and store it in a structured way.
 The outcome of this is a wiki, where the LLM acts as the main way to both add and retrieve information.
 
 First of all, I enjoy writing.
@@ -177,6 +179,15 @@ On the other hand, this system also allows me to easily look information up, as 
 Third, I don't want to be dependent on a single specific LLM, or on LLM performance in general, especially with pricing changing on the regular and user experience being generally variable between models.
 
 ## Conclusions
+
+Having ran and used the RAG for some time now, I can proudly say I already have been able to save myself a lot of effort that I would have otherwise spent in searching my own notes, not to mention the fact that I could find bits of information I had completely forgot I had.
+For a good while, before deciding to take on this project, I had let AI agents "free" on my notes directory, which typically required several tool calls before being able to find the right information, and sometimes even resulted in important documents being overlooked.
+Another important aspect is that my notes don't have to necessarily live on my machine, as the MCP server is accessible remotely.
+
+Additionally, from a personal perspective, I find myself not keen on letting AI models "take the lead" (call it being a _control freak_ or _impostor syndrome_), which means I still want to be the author and have full control on what my notes contain.
+Under this light, my RAG implementation is a way to establish the dependency of the AI agents on my own knowledge, allowing me to still be in charge, and the AI to "learn" from what I know, often resulting in the ability to inject my point of view in conversations with LLMs.
+
+There are still many features that I would like to implement in the future (incremental indexing, real-time fetch of new notes, ...), and the solution is currently far from perfect, but at the end of the day, what counts is I learned something new.
 
 ---
 
