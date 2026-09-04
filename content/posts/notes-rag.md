@@ -24,7 +24,7 @@ From then on, finding things in your notes (or _second brain_, as [Obsidian](htt
   align="center"
 >}}
 
-Furthermore, with AI usage increasing, I more and more feel the need to automatically inject context into conversations, based on my knowledge contained in my notes.
+Furthermore, with AI usage increasing, I often feel the need to automatically inject context into conversations, based on my knowledge contained in my notes.
 
 Well, it turns out that it is possible to kill two birds with one stone in this case!
 And this is all thanks to **Retrieval Augmented Generation** (RAG).\
