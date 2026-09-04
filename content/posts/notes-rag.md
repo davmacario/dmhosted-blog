@@ -9,10 +9,13 @@ tags:
   - AI
   - markdown
   - RAG
+  - MCP
 ---
 
 Countless words could be spent to explain the superiority of text-based file formats, but I won't bore you with this.
-There comes a moment in every digital notetaker's life when searching for specific information in your notes (or _second brain_, as [Obsidian](https://obsidian.md/) nerds like to call it) becomes more and more difficult.
+The one benefit that's relevant to this article is that plain text can be searched by anything: `grep`, your editor, a shell one-liner.
+The catch is that all of those search for _strings_, and there comes a moment in every digital notetaker's life when you remember the idea but not the words you wrote it in.
+From then on, finding things in your notes (or _second brain_, as [Obsidian](https://obsidian.md/) nerds like to call it) gets harder and harder.
 
 {{< figure
   src="/obsidian-graph.png"
@@ -21,13 +24,13 @@ There comes a moment in every digital notetaker's life when searching for specif
   align="center"
 >}}
 
-Additionally, when using AI, I often feel the need to be able to easily inject context into conversations based on my knowledge contained in my notes.
+Furthermore, with AI usage increasing, I more and more feel the need to automatically inject context into conversations, based on my knowledge contained in my notes.
 
 Well, it turns out that it is possible to kill two birds with one stone in this case!
 And this is all thanks to **Retrieval Augmented Generation** (RAG).\
-RAG is by no means a new technique, but it is one that is becoming underestimated, as its benefits struggle to hold up with the increasing performance of LLMs.
+RAG is by no means a new technique, but it is one that is increasingly underestimated, as its benefits struggle to keep up with the growing capability of LLMs.
 
-In this article, I'm going to explain why I think RAG still holds up in the "_agentic AI era_" (for my specific use case), and how I run one so that I don't have to get lost in my own mess of a "_second brain_".
+In this article, I'm going to explain why I think RAG still holds up in the _agentic AI era_ (for my specific use case), and how I run one so that I don't have to get lost in my own mess of a "_second brain_".
 
 > [!warning] Disclaimer
 >
@@ -36,16 +39,16 @@ In this article, I'm going to explain why I think RAG still holds up in the "_ag
 
 ## Retrieval Augmented Generation in short
 
-RAG is a technique created to automatically inject relevant context into an LLM by querying relevant information of a set of documents using _information retrieval_ techniques.
+RAG is a technique created to automatically inject relevant context into an LLM by querying relevant information from a set of documents using _information retrieval_ techniques.
 These techniques work by computing a measure of semantic similarity between the user query and a set of text (or other form of media) samples.
 
 The typical method used to perform information retrieval in this context is through vector similarity.
 This approach employs vector embeddings obtained by feeding both the samples and the query through the same _text embedding model_, which is typically a neural network or matrix transformation trained to capture semantic meaning of input text samples onto a latent representation space (the vector space).
-Given this, finding text samples close in meaning means finding vectors that are close in space (which have, e.g., high _cosine similarity_).
+Given this, finding text samples close in meaning comes down to finding vectors that are close in space (which have, e.g., high _cosine similarity_).
 
 ### RAG in practice
 
-How RAGs are implemented in practice in computer systems is by means of a _vector database_[^1], used to store all representations of some reference documents (alongside metadata).
+In practice, RAG systems are built around a _vector database_[^1], used to store all representations of some reference documents (alongside metadata).
 Retrieval then consists of taking the user query, embedding it to get the vector representation, and running a vector DB query to get the top _k_ matching vectors and return the associated documents.
 
 In "traditional" RAG systems, when the user interacts with the LLM, their message is used as input for the DB query, and the returned documents are appended to the conversation to be included in the context.
@@ -57,7 +60,7 @@ In "traditional" RAG systems, when the user interacts with the LLM, their messag
   align="center"
 >}}
 
-[^1]: A **vector database** is a database optimized to store and perform operations (particularly, retrieval) on vector fields. Examples include Chroma, Pinecone, but also PostgreSQL with _pgvector_, or (some functionalities of) Elasticsearch.
+[^1]: A **vector database** is a database optimized to store and perform operations (particularly, retrieval) on vector fields. Examples include Chroma and Pinecone, but also PostgreSQL with _pgvector_, or (some functionalities of) Elasticsearch.
 
 ## RAG meets my Obsidian Vault
 
@@ -74,7 +77,7 @@ In my case, though, I would like to "pull in" extra information into a conversat
 
 Additionally, retrieval performance (in terms of relevance of the results) is negatively affected by long user queries, especially on reference data that contains sparse bits of information, like personal notes.
 Ideally, the queried string is something resembling a Google search (few words, mostly keywords).\
-This is actually not usually a problem in most RAG systems, as retrieval performance is very good on state-of-the-art embedding models, but for my use case I would like for retrieval to be very lightweight and run on CPU only, so that I could easily containerize it and run it on my homelab (currently no GPUs there).
+This is actually not usually a problem in most RAG systems, as retrieval performance is very good on state-of-the-art embedding models, but for my use case I wanted retrieval to be very lightweight and run on CPU only, so that I could easily containerize it and run it on my homelab (currently no GPUs there).
 
 > [!TIP]
 >
@@ -100,7 +103,7 @@ The LLM can then autonomously decide whether to invoke a tool based on the conve
 - [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
 - Extras include GitPython (Git repo management), Pydantic (data validation)
 
-The code can be found [here](https://github.com/davmacario/notes-rag/) - _feel free to contribute!_.
+The code can be found [here](https://github.com/davmacario/notes-rag/) - _feel free to contribute!_
 
 #### Architecture
 
@@ -114,7 +117,7 @@ The code can be found [here](https://github.com/davmacario/notes-rag/) - _feel f
 #### How it works
 
 The RAG runs as an **MCP server**, which exposes it as a tool over (streamable-)HTTP.
-This allows any LLM harness supporting MCP to connect to it and be advertised the tool (I personally use Claude Code and [OpenCode](https://opencode.ai/)).
+This allows any LLM harness supporting MCP to connect to it and discover the tool (I personally use Claude Code and [OpenCode](https://opencode.ai/)).
 
 The tool itself is used to fetch relevant documents given a _query string_ and the _number of desired documents_.
 Note that "documents", in this context, refers to _Markdown sections_.
@@ -131,7 +134,7 @@ Also, being _free_ to use tools, the LLM can choose to perform multiple calls to
 
 #### Usage in practice
 
-The application itself is [containerized](https://github.com/davmacario/notes-rag/pkgs/container/notes-rag), and it can run on virtually any host, as it is built with the intention of taking as small of a footprint as possible.
+The application itself is [containerized](https://github.com/davmacario/notes-rag/pkgs/container/notes-rag), and it can run on virtually any host, as it is built to take the smallest footprint possible.
 In my case, it [runs on Kubernetes](https://github.com/davmacario/dmhosted-infra/tree/main/kubernetes/apps/notes-rag), and it is exposed to my VPN (Tailscale) only, over HTTPS[^3].
 
 > [!NOTE]
@@ -174,7 +177,7 @@ I want all my notes to be written by me; that is how I make sure that the inform
 
 Secondly, I am also the main user of my notes.
 Having a RAG system is just a "nice to have" in making it easier for LLMs to be grounded on my actual knowledge.
-On the other hand, this system also allows me to easily look information up, as the MCP server also returns the names of the files the relevant information was obtained from.
+At the same time, this system also lets me easily look information up, as the MCP server also returns the names of the files the relevant information was obtained from.
 
 Third, I don't want to be dependent on a single specific LLM, or on LLM performance in general, especially with pricing changing on the regular and user experience being generally variable between models.
 
@@ -187,7 +190,7 @@ Another important aspect is that my notes don't have to necessarily live on my m
 Additionally, from a personal perspective, I find myself not keen on letting AI models "take the lead" (call it being a _control freak_ or _impostor syndrome_), which means I still want to be the author and have full control on what my notes contain.
 Under this light, my RAG implementation is a way to establish the dependency of the AI agents on my own knowledge, allowing me to still be in charge, and the AI to "learn" from what I know, often resulting in the ability to inject my point of view in conversations with LLMs.
 
-There are still many features that I would like to implement in the future (incremental indexing, real-time fetch of new notes, ...), and the solution is currently far from perfect, but at the end of the day, what counts is I learned something new.
+There are still many features that I would like to implement in the future (incremental indexing, real-time fetch of new notes, ...), and the solution is currently far from perfect, but I learned a lot building it, and I haven't gone back to searching my notes by hand since..
 
 ---
 
