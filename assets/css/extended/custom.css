@@ -1,5 +1,8 @@
-/* Wider than default — technical posts have code blocks */
-.main { max-width: 780px; }
+/* Wider than default — technical posts have code blocks.
+   Exposed as a variable because assets/css/extended/toc.css offsets the
+   sidebar TOC from the edge of this column. */
+:root { --content-max: 780px; }
+.main { max-width: var(--content-max); }
 
 
 .alert {

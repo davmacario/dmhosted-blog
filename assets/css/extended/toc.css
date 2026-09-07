@@ -1,0 +1,117 @@
+/* Sidebar table of contents.
+ *
+ * Everything that makes the TOC a sidebar lives inside the media query below.
+ * Under that breakpoint this file contributes nothing but the scroll offset, so
+ * PaperMod's stock collapsible `details.toc` box (common/post-single.css) is the
+ * narrow-screen fallback, unmodified.
+ *
+ * Breakpoint arithmetic: the content column is --content-max (780px) and centred,
+ * so the free gutter per side is (100vw - 780px) / 2. A --toc-width of 240px plus
+ * a --toc-gap of 32px needs 272px of that, i.e. 1324px of viewport; 1400px is used
+ * instead to leave a comfortable margin to the right of the TOC. Media queries
+ * can't read custom properties, so the value is duplicated in the query below and
+ * in the matchMedia call in layouts/_partials/toc.html — keep the three in sync.
+ */
+
+:root {
+  --toc-width: 15rem;
+  --toc-gap: 2rem;
+}
+
+/* Keep anchor jumps from landing with the heading flush against the viewport top. */
+.post-content :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 5rem;
+}
+
+@media print {
+  .toc-sidebar { display: none; }
+}
+
+@media (min-width: 1400px) {
+  .toc-sidebar {
+    position: fixed;
+    top: calc(var(--header-height) + 2rem);
+    left: 50%;
+    transform: translateX(calc(var(--content-max) / 2 + var(--toc-gap)));
+    width: var(--toc-width);
+    max-height: calc(100vh - var(--header-height) - 6rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  /* Drop the card chrome the theme gives the inline box. */
+  .toc-sidebar details.toc,
+  [data-theme="dark"] .toc-sidebar details.toc {
+    margin: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .toc-sidebar details.toc .inner {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* The summary becomes a static label rather than a disclosure control. Made
+     inert only under .toc-live (added by the script), because the script is what
+     forces the element open — without it the summary has to stay clickable. */
+  .toc-sidebar details.toc summary {
+    display: block;
+    padding: 0 0 0.5rem 0.75rem;
+    list-style: none;
+  }
+
+  .toc-sidebar.toc-live details.toc summary {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .toc-sidebar details.toc summary::marker { content: ""; }
+  .toc-sidebar details.toc summary::-webkit-details-marker { display: none; }
+
+  .toc-sidebar details.toc .title {
+    margin: 0;
+    font-size: 1.0rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--secondary);
+  }
+
+  /* Every level gets its own rail, so the active marker always sits on a line. */
+  .toc-sidebar #TableOfContents ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-inline-start: 1px solid var(--border);
+  }
+
+  .toc-sidebar #TableOfContents ul ul {
+    margin-inline-start: 0.75rem;
+  }
+
+  .toc-sidebar #TableOfContents li {
+    margin: 0;
+  }
+
+  .toc-sidebar #TableOfContents a {
+    display: block;
+    padding: 0.25rem 0 0.25rem 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--secondary);
+    text-decoration: none;
+  }
+
+  .toc-sidebar #TableOfContents a:hover {
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .toc-sidebar #TableOfContents a.toc-active {
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: inset 2px 0 var(--primary);
+  }
+}

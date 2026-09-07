@@ -31,7 +31,8 @@ params:
       Platform/DevOps engineer, originally from Torino, now living in the Netherlands.
       I write about Linux, Kubernetes, homelabs and distributed systems: mostly the
       things I break in my spare time.\
-      [More about me →](/about/about-me/)
+      [More about me →](/about/about-me/)\
+      [Some projects I worked on →](/projects/projects/)
 
   socialIcons:
     - name: github
@@ -56,6 +57,10 @@ menu:
       name: About
       url: /about/about-me
       weight: 30
+    - identifier: projects
+      name: Projects
+      url: /projects/projects
+      weight: 30
 
 markup:
   highlight:
@@ -65,3 +70,17 @@ markup:
   goldmark:
     renderer:
       unsafe: true
+  tableOfContents:
+    startLevel: 2
+    endLevel: 4
+    ordered: false
+
+cascade:
+  - target:
+      path: /posts/**
+    params:
+      ShowToc: true
+  - target:
+      path: /projects/projects
+    params:
+      ShowToc: true
