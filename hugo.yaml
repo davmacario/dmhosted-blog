@@ -70,3 +70,17 @@ markup:
   goldmark:
     renderer:
       unsafe: true
+  tableOfContents:
+    startLevel: 2
+    endLevel: 4
+    ordered: false
+
+cascade:
+  - target:
+      path: /posts/**
+    params:
+      ShowToc: true
+  - target:
+      path: /projects/projects
+    params:
+      ShowToc: true

@@ -2,15 +2,7 @@
 date: "2026-09-07T17:55:41+02:00"
 draft: false
 title: "Projects"
-summary: "Personal projects"
----
-
-- [Homelab](#homelab-dmhosted)
-- [MDI-LLM](#mdi-llm)
-- [FREISA](#freisa)
-- [Notes-RAG](#notes-rag)
-- [nvim-kube-schemas](#nvim-kube-schemas)
-
+summary: "Projects I worked on"
 ---
 
 ## Homelab (DMHosted)

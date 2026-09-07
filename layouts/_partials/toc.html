@@ -1,0 +1,93 @@
+{{- /*
+  Sidebar table of contents. Overrides PaperMod's own toc.html.
+
+  Deliberately keeps the theme's `details.toc` / `summary` / `.inner` markup and
+  class names: below the sidebar breakpoint no custom CSS applies, so the theme's
+  stock collapsible box (assets/css/common/post-single.css) is the fallback for
+  free. assets/css/extended/toc.css repositions it into the right-hand gutter on
+  wide viewports.
+
+  Content comes from Hugo's native .TableOfContents, so heading depth is governed
+  by markup.tableOfContents in hugo.yaml rather than hardcoded here.
+*/ -}}
+{{- $toc := .TableOfContents -}}
+{{- if strings.Contains (printf "%s" $toc) "<li" -}}
+<aside class="toc-sidebar">
+  <details class="toc"{{ if (.Param "TocOpen") }} open{{ end }}>
+    <summary accesskey="c" title="(Alt + C)">
+      <span class="title">{{- i18n "toc" | default "Table of Contents" }}</span>
+    </summary>
+    <div class="inner">
+      {{ $toc }}
+    </div>
+  </details>
+</aside>
+<script>
+  (function () {
+    var side = document.querySelector('.toc-sidebar');
+    if (!side) return;
+    var details = side.querySelector('details.toc');
+    var links = Array.prototype.slice.call(
+      side.querySelectorAll('#TableOfContents a[href^="#"]')
+    );
+    if (!details || !links.length) return;
+
+    /* Tells the stylesheet that the summary is now script-controlled, so it can
+       be made inert. Without JS it must stay clickable, or a wide-screen reader
+       would be left with a label that cannot be opened. */
+    side.classList.add('toc-live');
+
+    /* Must match the breakpoint in assets/css/extended/toc.css. */
+    var wide = window.matchMedia('(min-width: 1400px)');
+
+    /* On wide screens the TOC is a sidebar, not a disclosure widget, so keep it
+       open. Left out of the markup so that without JS the element still honours
+       TocOpen and behaves exactly like the stock theme. */
+    function sync() { if (wide.matches) details.open = true; }
+    sync();
+    wide.addEventListener('change', sync);
+    details.addEventListener('toggle', sync);
+
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(decodeURIComponent(a.hash.slice(1))) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    /* Scroll the active entry into view within the sidebar itself, rather than
+       using scrollIntoView, which can also nudge the document. */
+    function reveal(a) {
+      var top = a.offsetTop;
+      var bottom = top + a.offsetHeight;
+      if (top < side.scrollTop) side.scrollTop = top - 8;
+      else if (bottom > side.scrollTop + side.clientHeight) {
+        side.scrollTop = bottom - side.clientHeight + 8;
+      }
+    }
+
+    var current = null;
+    function update() {
+      /* Headings are in document order: the last one above the threshold is the
+         section being read. Falling back to the first entry keeps something lit
+         while the reader is still above the first heading. */
+      var active = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= 100) active = targets[i];
+        else break;
+      }
+      if (active === current) return;
+      if (current) current.link.classList.remove('toc-active');
+      active.link.classList.add('toc-active');
+      current = active;
+      if (wide.matches) reveal(active.link);
+    }
+
+    var queued = false;
+    window.addEventListener('scroll', function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; update(); });
+    }, { passive: true });
+    update();
+  })();
+</script>
+{{- end }}
