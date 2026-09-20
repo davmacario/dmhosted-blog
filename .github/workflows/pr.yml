@@ -36,10 +36,13 @@ jobs:
           docker run --rm -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
             caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
 
+      - uses: docker/setup-buildx-action@v3
+
       - name: Verify image builds
         uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: false
 
       - uses: actions/upload-artifact@v4
