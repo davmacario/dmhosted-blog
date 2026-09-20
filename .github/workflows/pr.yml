@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   check:
@@ -79,6 +79,9 @@ jobs:
 
           npm run release:dry -- --branches "$HEAD_REF" 2>&1 \
             | tee /tmp/semantic-release.log
+
+          version="$(grep -oP 'The next release version is \K[0-9][^\s]*' /tmp/semantic-release.log | tail -n 1 || true)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Report next version
         if: always()
