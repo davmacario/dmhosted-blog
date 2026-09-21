@@ -1,6 +1,5 @@
 ---
 date: "2026-09-16T17:51:30+02:00"
-draft: true
 title: "How is this blog hosted?"
 summary: "Running this blog on my homelab Kubernetes cluster, exposed through a Cloudflare tunnel, with metrics, access logs, and a fallback"
 tags:
