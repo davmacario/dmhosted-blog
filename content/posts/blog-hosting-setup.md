@@ -32,9 +32,11 @@ Deploying the website then just becomes a problem of running the built container
 >
 > This setup is _very overkill_ for a static website, but it would not be fun otherwise!
 
-I decided on deploying the container on my homelab, which is running Kubernetes ([K3s]()).
+I decided on deploying the container on my homelab, which is running Kubernetes ([K3s]()), and expose it publicly via a [Cloudflare tunnel]().
 
-## Where it runs
+### Kubernetes
+
+The blog is a stateless application, as it is just serving static files, so it can be deployed using a standard Kubernetes `Deployment`.
 
 ## Exposing it to the public
 
