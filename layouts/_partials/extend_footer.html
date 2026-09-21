@@ -1,6 +1,4 @@
-{{ if .Store.Get "hasMermaid" }}
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true });
-  </script>
-{{ end }}
+{{- /* Mermaid used to be loaded from here, but PaperMod wraps the footer in
+       partialCached (see themes/PaperMod/layouts/baseof.html), so per-page
+       flags set from render hooks never reach it. The module is now loaded by
+       layouts/_markup/render-codeblock-mermaid.html instead. */ -}}
