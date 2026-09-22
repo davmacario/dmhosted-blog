@@ -1,10 +1,6 @@
 <pre class="mermaid">
   {{ .Inner | htmlEscape | safeHTML }}
 </pre>
-{{- /* PaperMod renders the footer through partialCached, keyed on .Layout/.Kind
-       only, so a flag set here is never visible to extend_footer.html: the
-       cached footer of some other page gets reused. Load the module from the
-       hook instead, guarded so it only happens once per page. */ -}}
 {{ if not (.Page.Store.Get "hasMermaid") }}
   {{ .Page.Store.Set "hasMermaid" true }}
   <script type="module">
