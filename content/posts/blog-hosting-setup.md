@@ -15,20 +15,20 @@ tags:
 ---
 
 I have been learning Kubernetes for a while, and when the idea of starting a blog popped into my mind, I knew it would have been a good way to make a recap of all the things I had learned so far.
-For me, it was a requirement from the start to be able to run the blog on my own infra, and this gave me the opportunity to fully oversee the whole process from writing an article, to building the website, deploying it on the cluster, and observing its behavior when visitors would come in.
+I had it as a requirement from the start to be able to run the blog on my own infra, and this allowed me to take part in the whole process from writing an article, to building the website, deploying it on the cluster, and observing its behavior when visitors would come in.
 
 In this article, I'll go through the full set up I am using to generate, host, and monitor this very blog.
 
 ## Generating the blog
 
 I am using [Hugo](https://gohugo.io/) to generate the static website.
-I had considered other alternatives, but Hugo being very lightweight (no _Node modules_...) and very fast to build (in the order of _ms_), I quickly settled on it.
-It is also very easy to extend (even for someone like me who never actually wrote any actual frontend code so far), and it is a very nice Golang project overall.
+I had considered other alternatives, but being Hugo very lightweight (no _Node modules_...) and very fast to build (in the order of _ms_), I quickly settled on it.
+It is also very easy to extend (even for someone like me who had never actually wrote any actual frontend code until then), and it is a very nice Golang project overall.
 
 The website code and content live on [GitHub](https://github.com/davmacario/dmhosted-blog), and everything past `git push` happens in GitHub Actions:
 
 - [Semantic Release](https://semantic-release.org/) reads the conventional commits landing on `main`, decides whether a new version should be released, and creates the tag and the GitHub release autonomously
-- a container image is built for every release, for both `linux/amd64` and `linux/arm64`, and pushed to GHCR tagged with the released version
+- A container image is built for every release, for both `linux/amd64` and `linux/arm64`, and pushed to GHCR tagged with the released version
 
 The container itself is based on [Caddy](https://caddyserver.com/) (a webserver I had been wanting to try out for the longest time), and it is just exposing the statically-built website:
 
@@ -42,7 +42,7 @@ The container itself is based on [Caddy](https://caddyserver.com/) (a webserver 
   @health path /healthz
   respond @health "ok" 200
 
-  # Static assets, can cache (Cloudflare)
+  # Static assets, can cache
   @static path *.css *.js *.woff2 *.svg *.png *.jpg *.jpeg *.webp *.ico
   header @static Cache-Control "public, max-age=31536000, immutable"
 
@@ -54,6 +54,10 @@ The container itself is based on [Caddy](https://caddyserver.com/) (a webserver 
 }
 ```
 
+> [!TIP]
+>
+> The `Cache-Control` header can be interpreted by Cloudflare to allow caching specific resources at the edge.
+
 Deploying the website then just becomes a problem of running the built container _somewhere_, and making it accessible publicly in a secure way.
 
 ## Deploying the blog
@@ -62,17 +66,17 @@ Deploying the website then just becomes a problem of running the built container
 >
 > This deployment setup is _very overkill_ for a static website, but it would not be fun otherwise!
 
-I decided on deploying the container on my homelab, which is running Kubernetes ([K3s](https://k3s.io/)), and expose it publicly via a [Cloudflare tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/).
+I decided on deploying the container on my homelab, which is a 3-node Kubernetes ([K3s](https://k3s.io/)) cluster, and expose it publicly via a [Cloudflare tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/).
 
 ### Kubernetes Deployment
 
-The blog is a stateless application, as it is just a web server serving static files, so it can be deployed using a standard Kubernetes `Deployment`.
+The blog is a stateless application, as it is just a web server serving static files, so it can be deployed using a Kubernetes `Deployment`.
 [Here](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/deployment.yaml) is the definition of the one currently running in my cluster.
 
-It is a fairly standard `Deployment`, with a few things worth pointing out:
+It is a very basic `Deployment`, with a few things worth pointing out:
 
-- the container runs as a non-root user, with a read-only root filesystem and all capabilities dropped; Caddy still wants somewhere to write its config and data directories, so `/tmp` is an in-memory `emptyDir`
-- readiness and liveness probes hit the `/healthz` endpoint defined in the `Caddyfile` [above](#generating-the-blog)
+- The container runs as a non-root user, with a read-only root filesystem and all capabilities dropped; Caddy still wants somewhere to write its config and data directories, so `/tmp` is an in-memory `emptyDir`
+- Readiness and liveness probes hit the `/healthz` endpoint defined in the `Caddyfile` [above](#generating-the-blog)
 - `topologySpreadConstraints` try to keep replicas on separate nodes, so that losing a node doesn't take the blog down with it
 
 Alongside the `Deployment`, I created a [`Service`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/service.yaml) and a Traefik [`IngressRoute`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/ingressroute.yaml), allowing to reach the pods from outside the cluster network (but no public route configured yet).
@@ -132,8 +136,8 @@ kubectl run -i --tty load-generator -n dmhosted-blog --rm --image=busybox:1.38 -
 
 Additionally, I deployed:
 
-- a [`PodDisruptionBudget`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/poddisruptionbudget.yaml) to ensure at least 1 replica of the blog is always running, even during maintenance
-- a [Cert-Manager](https://cert-manager.io/) [`Certificate`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/certificate.yaml) to automatically manage the lifecycle of the TLS certificate provided by the `IngressRoute`
+- A [`PodDisruptionBudget`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/poddisruptionbudget.yaml) to ensure at least 1 replica of the blog is always running, even during maintenance
+- A [Cert-Manager](https://cert-manager.io/) [`Certificate`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/apps/dmhosted-blog/certificate.yaml) to automatically manage the lifecycle of the TLS certificate provided by the `IngressRoute`
 
 ### Exposing it to the public
 
@@ -144,8 +148,8 @@ Since I would like to have as much infrastructure as possible defined with code,
 
 > [!NOTE]
 >
-> This assumes your domain is already served by Cloudflare, with the encryption mode set to _Full_ (in the "SSL/TLS" pane, after selecting your domain from the console).
-> The _Edge Certificates_, i.e., the ones visitors actually see, are provisioned automatically through Universal SSL, and can be checked at "SSL/TLS" > "Edge Certificates" to confirm they have been issued.
+> This assumes your domain is already managed by Cloudflare, with the encryption mode set to _Full_ (in the "SSL/TLS" pane, after selecting your domain from the console).
+> The _Edge Certificates_, i.e., the ones visitors will actually see, are provisioned automatically through Universal SSL, and can be checked at "SSL/TLS" > "Edge Certificates" to confirm they have been issued.
 
 I created the tunnel `k3s-traefik` using the [`cloudflared` CLI](https://developers.cloudflare.com/cloudflare-one/tutorials/cli/), after authenticating it against my Cloudflare account:
 
@@ -188,8 +192,8 @@ data:
       - service: http_status:404
 ```
 
-This instructs `cloudflared` to route all traffic it receives to the Traefik `Service`, which acts as a reverse proxy.
-In my case, all requests hitting the Traefik service get routed to different pods based on the hostname, using rules defined as part of the respective `IngressRoute`s.
+This instructs `cloudflared` to route all traffic it receives to the Traefik (my Ingress Controller) `Service`.
+Then, all requests hitting the Traefik service would get routed to different pods based on the hostname, using rules defined as part of the respective `IngressRoute`s.
 
 > [!NOTE]
 >
@@ -286,7 +290,7 @@ Following the overkill setup of the blog, Cloudflared got its own [`HorizontalPo
 
 The `cloudflare` namespace also runs under a default-deny [`NetworkPolicy`](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/cloudflare-tunnel/networkpolicy.yaml), with explicit exceptions for what the tunnel actually needs: cluster DNS, Prometheus scraping port 2000, the kubelet probe, outbound QUIC/TCP on 7844 to the Cloudflare edge, and TCP/443 to the primary Traefik pods - and nothing else.
 The egress rule deliberately excludes every private range (pods, services, LAN, Tailscale).
-After all, `cloudflared` is the one workload in the cluster whose entire job is to talk to the outside world, so it felt like the right place to be strict.
+After all, `cloudflared` is the one workload in the cluster whose entire job is to talk to the outside world, so I did not want to make any compromise on it.
 
 The one last missing link in the chain was to wire DNS records so that they pointed to the tunnel.
 Instead of doing this manually, I use [External DNS](https://kubernetes-sigs.github.io/external-dns/v0.15.0/).
@@ -313,7 +317,7 @@ With this setup, exposing a new public application over the tunnel becomes as si
 
 - Deploying the application on K8s (`Deployment` / `StatefulSet` / ...)
 - Creating a `Service` fronting the application pods
-- Defining a Traefik `IngressRoute` resource with the right annotations, with a routing rule matching the application domain (subdomain of `dmhosted.com`)
+- Defining a Traefik `IngressRoute` resource with the right annotations, with a routing rule matching the application domain (which should be a subdomain of `dmhosted.com`)
   - Including passing the `Certificate` resource for the domain
 
 ...and like that, I have another publicly-reachable website.
@@ -333,13 +337,13 @@ To monitor my blog, I decided to collect the following:
 >
 > Since the DNS records are proxied (`cloudflare-proxied: "true"`), Cloudflare caches a good part of the site at its edge - and the `Cache-Control` headers set in the `Caddyfile` make sure it does.
 > This means Traefik and the blog pods only ever see the cache _misses_.
-> Whatever the graphs below show, it is not a visitor count, and it will not line up with Cloudflare's own analytics.
-> For a static blog that is the whole point, but it is worth keeping in mind before drawing conclusions from them.
+> Whatever the graphs below show, it is not an actual visitor count, and it will not line up with Cloudflare's own analytics.
+> For a static blog that is the whole point, but it is worth keeping in mind.
 
 ### Collecting metrics
 
 I already had the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) running in my cluster (installed with Helm - see [values](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/monitoring/kube-prometheus/values.yaml)), which gave me a Prometheus instance and Grafana (including some nice pre-configured dashboards).
-Thanks to this, I could also easily create `ServiceMonitor`s, i.e., Kubernetes (custom) resources used to instruct the Prometheus instance to scrape specific `Service`s in my cluster and collect metrics from them.
+Thanks to this, I could also easily create `ServiceMonitor`s, i.e., (custom) Kubernetes resources used to instruct the Prometheus instance to scrape specific `Service`s in my cluster and collect metrics from them.
 
 As shown [before](#exposing-it-to-the-public), Cloudflared was configured to expose metrics over port 2000.
 A `Service` then fronts that port, and a `ServiceMonitor` points Prometheus at the `Service`:
@@ -456,10 +460,16 @@ spec:
 Last, but not least, I decided to collect Traefik access logs using [Loki](https://grafana.com/oss/loki/).
 This allows me to see where requests to my blog come from, and what specific paths they target.
 
+> [!NOTE]
+>
+> As highlighted before, these are just the requests that hit non-cached contents (i.e., HTML).
+> As such, they are still a good indication of what part of the website users visit most.
+
 To be able to systematically parse logs, I had to configure Traefik to produce them in JSON format.
 On top of this, since by default all request headers are dropped in the logs, I had to explicitly tell Traefik to keep the ones I was interested in (`Cf-Connecting-Ip`, the client IP, and `Cf-Ipcountry`, the country code of the client).
 Those headers are injected by the **Cloudflare edge**.
-Here is the Traefik configuration (in my case, this lives as part of the [Helm values](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/traefik/values.yaml)):
+
+Here is the Traefik configuration (in my case, this is part of the [Helm values](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/traefik/values.yaml)):
 
 ```yaml
 accessLog:
@@ -516,7 +526,8 @@ config:
               regex_parser: kubernetes-tag
               k8s-logging.parser: true
               k8s-logging.exclude: true
-      # ... other log inputs
+
+      # ... other log inputs (outside of the scope of the article)
 
     filters:
       - name: parser
@@ -539,7 +550,12 @@ config:
         retry_limit: 5
 ```
 
-The configuration above looks for logs coming from Traefik containers, processes them (extract JSON + kubernetes filter), and forwards them to Loki.
+The configuration above looks for logs coming from Traefik containers (`traefik` namespace), processes them (extract JSON + kubernetes filter), and forwards them to Loki.
+
+Fluent Bit runs as a `DaemonSet` on each node, and mounts `/var/log`.
+Kubernetes stores pod logs in `/var/log/containers`, so we can just point Fluent Bit to the logs of the desired pods.
+
+Fluent Bit also ships with a `Kubernetes` filter, which can be used to extract useful metadata from the logs produced by pods.
 
 Loki can then be plugged into Grafana as a data source, and the parsed fields become directly queryable:
 
@@ -547,15 +563,16 @@ Loki can then be plugged into Grafana as a data source, and the parsed fields be
 {namespace="traefik"} | json | RequestHost = "blog.dmhosted.com"
 ```
 
-From there, the kept headers are available as labels to group by - note that Loki rewrites the `-` in header names, so `Cf-Ipcountry` becomes `request_Cf_Ipcountry`.
+From there, the kept headers are available as labels to group by (note that Loki rewrites the `-` in header names, so `Cf-Ipcountry` becomes `request_Cf_Ipcountry`).
 
 Both Loki and Fluent Bit I also installed using Helm charts - see the values [here](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/monitoring/loki/values.yaml) and [here](https://github.com/davmacario/dmhosted-infra/blob/main/kubernetes/monitoring/fluent-bit/values.yaml), respectively.
 
 > [!NOTE]
 >
-> My Loki runs in monolithic (single binary) mode with a 7-day retention period, which is good enough for me.
+> My Loki runs in monolithic (single binary) mode with a 7-day retention period, which is good enough for my use case.
+> It also uses my NAS as storage.
 
-Some interesting visualizations:
+Some interesting visualizations that can be obtained by processing access logs:
 
 {{< figure
   src="/traefik-logs-table.png"
@@ -567,7 +584,7 @@ Some interesting visualizations:
 {{< figure
   src="/traefik-logs-origin.png"
   alt="Geolocation of request origins"
-  caption="Countries requests were received from"
+  caption="Countries hitting (scraping) my homelab"
   align="center"
 >}}
 
@@ -711,7 +728,7 @@ Having the possibility to see the behavior of my blog and understand what goes o
 
 At last, the fallback deployment is a well-deserved reality check, which despite looking incredibly simpler than the Kubernetes setup, allows achieving pretty much the same result (from a client's perspective), and works very well as a stop-gap solution when something brings my cluster offline for any reason.
 
-As already noted, there are possible improvements here and there (like making the Docker setup persistent and collecting metrics from it), but I'm overall very satisfied with the setup, and hopefully if you are still able to read this, you are too :)
+As already noted, there are possible improvements here and there (like making the Docker setup persistent and collecting metrics from it), but I'm overall very satisfied with the setup, and, if you are still able to read this, hopefully you are too :)
 
 ---
 
@@ -722,4 +739,4 @@ As already noted, there are possible improvements here and there (like making th
 - [External DNS](https://kubernetes-sigs.github.io/external-dns/v0.15.0/) and its [Cloudflare tutorial](https://kubernetes-sigs.github.io/external-dns/v0.15.0/tutorials/cloudflare/)
 - [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack), [Loki](https://grafana.com/oss/loki/) and [Fluent Bit](https://fluentbit.io/)
 - All the manifests referenced in this article live in [davmacario/dmhosted-infra](https://github.com/davmacario/dmhosted-infra)
-- The companion piece to this one: [Tailscale and Kubernetes]({{< ref "k8s-and-tailscale" >}}), on exposing the _private_ half of the same cluster
+- [Tailscale and Kubernetes](/posts/k8s-and-tailscale), on exposing the _private_ half of the same cluster
