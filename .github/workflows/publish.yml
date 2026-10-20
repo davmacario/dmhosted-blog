@@ -70,7 +70,8 @@ jobs:
 
       - uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: "latest"
+          # renovate: datasource=github-releases depName=gohugoio/hugo
+          hugo-version: "0.168.0"
           extended: true
 
       - name: Build site

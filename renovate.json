@@ -1,0 +1,87 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dependency upgrades, run by the self-hosted Renovate in dmhosted-infra",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "automerge": false,
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 15,
+  "reviewers": ["davmacario"],
+  "minimumReleaseAge": "3 days",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "enabledManagers": [
+    "npm",
+    "github-actions",
+    "dockerfile",
+    "git-submodules",
+    "custom.regex"
+  ],
+  "git-submodules": {
+    "enabled": true
+  },
+  "customManagers": [
+    {
+      "description": "`# renovate:` comment above a `key: <version>` line (Hugo in workflows)",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*[\\w-]+: \"?(?<currentValue>[^\"\\s]+)\"?(?:\\n|$)"
+      ],
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "description": "caddy image used by `docker run` in the PR pipeline",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/pr\\.ya?ml$/"],
+      "matchStrings": ["\\s(?<depName>caddy):(?<currentValue>\\d[\\w.-]*)"],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "semantic-release",
+        "@semantic-release/**",
+        "conventional-changelog-**"
+      ],
+      "groupName": "semantic-release"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["docker/**"],
+      "groupName": "docker-actions"
+    },
+    {
+      "description": "Base image of the published site: force a patch release",
+      "matchPackageNames": ["caddy"],
+      "groupName": "caddy",
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": "Site generator: force a patch release",
+      "matchPackageNames": ["gohugoio/hugo"],
+      "groupName": "hugo",
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": "Theme: force a patch release",
+      "matchManagers": ["git-submodules"],
+      "groupName": "papermod",
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": "Node: LTS majors only (setup-node and engines together)",
+      "matchPackageNames": ["node"],
+      "versioning": "node",
+      "groupName": "node"
+    },
+    {
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "enabled": false
+    }
+  ]
+}
